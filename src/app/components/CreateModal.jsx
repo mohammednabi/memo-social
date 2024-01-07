@@ -360,9 +360,6 @@ const SuccessfulPost = () => {
       <h2 className="text-lg text-stone-400 text-center">
         your post was shared successfully{" "}
       </h2>
-      {/* <button className="bg-stone-900 transition-colors hover:bg-stone-800  text-stone-400 px-5 py-3 capitalize rounded-xl">
-        share another post
-      </button> */}
     </Stack>
   );
 };

@@ -4,37 +4,25 @@ import PostModal from "@/app/components/PostModal";
 import { UserContext } from "@/app/contexts/user";
 import { db, getPosts } from "@/app/firebase/FireBase-config";
 import usePosts from "@/app/hooks/usePosts";
+import useTargetPost from "@/app/hooks/useTargetPost";
+import useUserPosts from "@/app/hooks/useUserPosts";
 import { Movie, MovieOutlined } from "@mui/icons-material";
 
 import Grid2 from "@mui/material/Unstable_Grid2/Grid2";
 import React, { useContext, useEffect, useState } from "react";
 
 export default function ProfilePostsPage() {
-  const posts = usePosts();
   const user = useContext(UserContext);
-  const [userPosts, setUserPosts] = useState([]);
-  const [mediaSrc, setMediaSrc] = useState("");
+
   const [open, setOpen] = useState(false);
   const [mediaType, setMediaType] = useState("");
   const [targetPost, setTargetPost] = useState();
 
-  const getUserPosts = () => {
-    if (user && posts) {
-      const allUserPosts = posts.filter((post) => {
-        return post.author.id === user.uid;
-      });
-
-      setUserPosts(allUserPosts);
-    }
-  };
+  const userPosts = useUserPosts();
 
   const handleClose = () => {
     setOpen(false);
   };
-
-  useEffect(() => {
-    getUserPosts();
-  }, [user, posts]);
 
   return (
     <div className="grid grid-cols-3 gap-2">
@@ -81,7 +69,7 @@ export default function ProfilePostsPage() {
           open={open}
           close={handleClose}
           mediaType={mediaType}
-          targetPost={targetPost}
+          targetPostId={targetPost.id}
         />
       )}
     </div>

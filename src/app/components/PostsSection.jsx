@@ -1,5 +1,6 @@
 "use client";
 import {
+  Favorite,
   FavoriteBorderOutlined,
   PlayArrow,
   VoiceChat,
@@ -11,15 +12,19 @@ import SendOutlinedIcon from "@mui/icons-material/SendOutlined";
 import BookmarkBorderOutlinedIcon from "@mui/icons-material/BookmarkBorderOutlined";
 import SentimentSatisfiedOutlinedIcon from "@mui/icons-material/SentimentSatisfiedOutlined";
 import {
+  Alert,
   Avatar,
+  Backdrop,
   Box,
   Button,
+  CircularProgress,
   Divider,
   IconButton,
   Skeleton,
+  Snackbar,
   Stack,
 } from "@mui/material";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import data from "@emoji-mart/data";
 import Picker from "@emoji-mart/react";
 import Grid2 from "@mui/material/Unstable_Grid2/Grid2";
@@ -27,11 +32,29 @@ import { collection, getDocs } from "firebase/firestore";
 import { postsCol } from "../firebase/FireBase-config";
 import usePosts from "../hooks/usePosts";
 import LoadMoreLoader from "./LoadMoreLoader";
+import { UserContext } from "../contexts/user";
+import PostModal from "./PostModal";
+import { addingComment, toggleLove } from "../functions/updateDocument";
 
 export default function PostsSection() {
   const posts = usePosts();
 
   const [index, setIndex] = useState(4);
+  const [targetPost, setTargetPost] = useState({ likes: 0 });
+  const [open, setOpen] = useState(false);
+  const user = useContext(UserContext);
+
+  const handleClose = () => {
+    setOpen(false);
+  };
+
+  const handleOpen = () => {
+    setOpen(true);
+  };
+
+  const handleTargetPost = (post) => {
+    setTargetPost(post);
+  };
 
   const increaseIndex = () => {
     setIndex((i) => {
@@ -46,7 +69,13 @@ export default function PostsSection() {
           (post, postIndex) =>
             postIndex < index && (
               <div key={post.id}>
-                <Post post={post} />
+                <Post
+                  post={post}
+                  handleOpen={handleOpen}
+                  handleTargetPost={handleTargetPost}
+                  user={user}
+                  toggleLove={toggleLove}
+                />
 
                 <hr className="opacity-100 dark:opacity-10" />
               </div>
@@ -56,15 +85,27 @@ export default function PostsSection() {
         <PostSkeleton />
       )}
       {index < posts.length && <LoadMoreLoader increaseIndex={increaseIndex} />}
+      {open && (
+        <PostModal
+          user={user}
+          open={open}
+          close={handleClose}
+          mediaType={targetPost.mediaType}
+          targetPostId={targetPost.id}
+        />
+      )}
     </section>
   );
 }
 
-const Post = ({ post }) => {
+const Post = ({ post, handleOpen, handleTargetPost, user }) => {
   const [inputComment, setInputComment] = useState("");
   const [emojiClicked, setEmojiClicked] = useState(false);
   const [videoPaused, setVideoPaused] = useState(true);
   const [videpAudioMuted, setVidepAudioMuted] = useState(false);
+  const [commentLoading, setCommentLoading] = useState(false);
+  const [alertMessage, setAlertMessage] = useState(null);
+
   const timeNow = new Date();
   const videoRef = useRef();
 
@@ -105,6 +146,20 @@ const Post = ({ post }) => {
     }
   };
 
+  const addComment = (postId, comments, comment, user) => {
+    addingComment(postId, comments, comment, user)
+      .then(() => {
+        setCommentLoading(false);
+        setAlertMessage("success");
+        setInputComment("");
+      })
+      .catch((err) => {
+        console.log("error adding comment", err);
+        setCommentLoading(false);
+        setAlertMessage("failed");
+      });
+  };
+
   const toggleVideoPause = () => {
     if (videoPaused) {
       videoRef.current.pause();
@@ -125,8 +180,37 @@ const Post = ({ post }) => {
     setVidepAudioMuted(!videpAudioMuted);
   };
 
+  const showSnackbar = (openState) => {
+    return (
+      <Snackbar open={openState} autoHideDuration={6000}>
+        {alertMessage === "success" ? (
+          <Alert
+            severity="success"
+            sx={{ width: "100%", background: "#68c468", color: "white" }}
+          >
+            Comment Added
+          </Alert>
+        ) : (
+          <Alert
+            severity="error"
+            sx={{ width: "100%", background: "#ba3439", color: "white" }}
+          >
+            failed to add Comment
+          </Alert>
+        )}
+      </Snackbar>
+    );
+  };
+
+  useEffect(() => {
+    setTimeout(() => {
+      setAlertMessage(null);
+    }, 6000);
+  }, [alertMessage]);
+
   return (
     <Stack spacing={2} className="font-insta w-112">
+      {alertMessage !== null && showSnackbar(true)}
       <Stack direction={"row"} className="     items-center" spacing={1}>
         <Avatar src={post.author.avatar} />
         <h1 className="text-stone-950 dark:text-white font-semibold">
@@ -190,15 +274,57 @@ const Post = ({ post }) => {
       >
         <Stack
           direction={"row"}
-          spacing={2}
+          spacing={1}
           className="justify-center items-center"
         >
-          <FavoriteBorderOutlined sx={{ fontSize: "2rem", color: "red" }} />
-          <ChatBubbleOutlineOutlinedIcon sx={{ fontSize: "2rem" }} />
-          <SendOutlinedIcon sx={{ fontSize: "2rem" }} className="-rotate-12" />
+          {!post.likes.includes(`${user.uid}`) ? (
+            <IconButton
+              onClick={() => {
+                toggleLove(post.id, post.likes, user);
+              }}
+            >
+              <FavoriteBorderOutlined
+                className="cursor-pointer transition-colors text-red-800 hover:text-red-800/50"
+                sx={{ fontSize: "2rem" }}
+              />
+            </IconButton>
+          ) : (
+            <IconButton
+              onClick={() => {
+                toggleLove(post.id, post.likes, user);
+              }}
+            >
+              <Favorite
+                className="cursor-pointer transition-colors text-red-800 hover:text-red-800/50"
+                sx={{ fontSize: "2rem" }}
+              />
+            </IconButton>
+          )}
+          <IconButton
+            onClick={() => {
+              handleOpen();
+              handleTargetPost(post);
+            }}
+          >
+            <ChatBubbleOutlineOutlinedIcon
+              className="cursor-pointer transition-colors text-white hover:text-white/50"
+              sx={{ fontSize: "1.6rem" }}
+            />
+          </IconButton>
+          {/* <IconButton>
+            <SendOutlinedIcon
+              className="cursor-pointer transition-colors text-white hover:text-white/50"
+              sx={{ fontSize: "1.6rem" }}
+            />
+          </IconButton> */}
         </Stack>
 
-        <BookmarkBorderOutlinedIcon sx={{ fontSize: "2rem" }} />
+        <IconButton>
+          <BookmarkBorderOutlinedIcon
+            className="cursor-pointer text-white transition-colors hover:text-white/50"
+            sx={{ fontSize: "2rem" }}
+          />
+        </IconButton>
       </Stack>
       <Stack spacing={1}>
         <h2 className="text-stone-950/95 dark:text-white/95">
@@ -207,8 +333,30 @@ const Post = ({ post }) => {
         <h1 className="text-stone-950/95 dark:text-white/95 w-full">
           {post.description}
         </h1>
-        <h2 className="text-stone-950/60 dark:text-white/60">
-          View all comments
+        {post.comments.length > 0 && (
+          <Stack spacing={-1} className="w-full">
+            <Stack direction={"row"} spacing={1} className="w-full">
+              <Avatar
+                src={post.comments[post.comments.length - 1].author.avatar}
+                className="w-8 h-8"
+              />
+              <h1 className="text-white text-lg">
+                {post.comments[post.comments.length - 1].author.name}
+              </h1>
+            </Stack>
+            <p className="text-white/60 pl-10">
+              {post.comments[post.comments.length - 1].content}
+            </p>
+          </Stack>
+        )}
+        <h2
+          className="text-stone-950/60 dark:text-white/60 cursor-pointer"
+          onClick={() => {
+            handleOpen();
+            handleTargetPost(post);
+          }}
+        >
+          View all {post.comments.length > 0 && post.comments.length} comments
         </h2>
         <Grid2 container>
           <Grid2 xs={inputComment.length > 0 ? 10 : 11}>
@@ -227,7 +375,20 @@ const Post = ({ post }) => {
             sx={{ display: "flex", gap: "" }}
           >
             {inputComment.length > 0 && (
-              <button className="text-blue-600 capitalize ">post</button>
+              <button
+                className="text-blue-600 capitalize "
+                onClick={() => {
+                  setCommentLoading(true);
+                  addComment(post.id, post.comments, inputComment, user);
+                }}
+              >
+                post
+              </button>
+            )}
+            {inputComment.length > 0 && commentLoading && (
+              <Backdrop open={true} className="text-white">
+                <CircularProgress color="inherit" size={100} />
+              </Backdrop>
             )}
             <IconButton
               onClick={() => {

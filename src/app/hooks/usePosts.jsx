@@ -1,5 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { collection, getDocs, onSnapshot, query } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  onSnapshot,
+  query,
+  orderBy,
+} from "firebase/firestore";
 import { postsCol } from "../firebase/FireBase-config";
 
 export default function usePosts() {
@@ -7,7 +13,7 @@ export default function usePosts() {
 
   const getPosts = () => {
     // const querySnapshot = await getDocs(postsCol);
-    const q = query(postsCol);
+    const q = query(postsCol, orderBy("timestamp.created.time", "desc"));
 
     onSnapshot(q, (querySnapshot) => {
       let postList = [];
