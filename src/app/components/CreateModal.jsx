@@ -41,12 +41,12 @@ export default function CreateModal({ open, handleClose }) {
     inputRef.current.click();
   };
 
-  const handleInputChanges = (e) => {
-    setSelectedMedia(URL.createObjectURL(e.target.files[0]));
-    setSelectedMediaType(e.target.files[0].type);
-    setSelectedMediaObj(e.target.files[0]);
-    console.log("selected media : ", e.target.files);
-    console.log("selected media : ", e.target.files[0].type);
+  const handleInputChanges = () => {
+    setSelectedMedia(URL.createObjectURL(inputRef.current.files[0]));
+    setSelectedMediaType(inputRef.current.files[0].type);
+    setSelectedMediaObj(inputRef.current.files[0]);
+    console.log("selected media : ", inputRef.current.files);
+    console.log("selected media : ", inputRef.current.files[0].type);
   };
 
   const back = () => {
@@ -182,7 +182,17 @@ export default function CreateModal({ open, handleClose }) {
         )}
         <Divider variant="middle" className=" border-white/5  w-full" />
         {!selectedMedia && !postUploaded && (
-          <Stack className="h-auto min-h-[20rem] justify-center items-center gap-3">
+          <div
+            onDragOver={(e) => {
+              e.preventDefault();
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              inputRef.current.files = e.dataTransfer.files;
+              handleInputChanges();
+            }}
+            className="flex flex-col border-dashed border-white/5 border-2 w-full h-auto min-h-[20rem] justify-center items-center gap-3"
+          >
             <img
               src={"/content.png"}
               alt=""
@@ -194,8 +204,8 @@ export default function CreateModal({ open, handleClose }) {
               type="file"
               className="hidden"
               accept="image/*,video/*"
-              onChange={(e) => {
-                handleInputChanges(e);
+              onChange={() => {
+                handleInputChanges();
               }}
             />
             <button
@@ -204,7 +214,7 @@ export default function CreateModal({ open, handleClose }) {
             >
               select from device
             </button>
-          </Stack>
+          </div>
         )}
         {selectedMedia && !postUploaded && (
           <WriteCaption

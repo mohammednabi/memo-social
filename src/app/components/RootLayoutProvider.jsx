@@ -8,11 +8,22 @@ import { UserContext } from "../contexts/user";
 import { auth } from "../firebase/Firebase-auth";
 import { onAuthStateChanged } from "firebase/auth";
 import { LinearProgress } from "@mui/material";
+import {
+  collection,
+  doc,
+  getDoc,
+  onSnapshot,
+  query,
+  where,
+} from "firebase/firestore";
+import { db } from "../firebase/FireBase-config";
+import { addUser } from "../functions/updateDocument";
 
 export default function RootLayoutProvider({ children }) {
   const pathName = usePathname();
   const router = useRouter();
   const [user, setUser] = useState();
+
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -23,7 +34,11 @@ export default function RootLayoutProvider({ children }) {
 
   onAuthStateChanged(auth, (currentUser) => {
     // console.log("this is the cure nt user : ", currentUser);
-    setUser(currentUser);
+    if (currentUser && !user) {
+      getCurrentUser(currentUser);
+    }
+    // setUser(currentUser);
+
     if (!currentUser) {
       pathName !== "/signup" ? router.push("/login") : router.push("/signup");
       setLoading(true);
@@ -31,6 +46,32 @@ export default function RootLayoutProvider({ children }) {
       setLoading(false);
     }
   });
+
+  const getCurrentUser = (currentUser) => {
+    const userRef = doc(db, "users", `${currentUser.uid}`);
+    getDoc(userRef)
+      .then((doc) => {
+        // console.log("this is the document of users : ", doc.data().data);
+        if (doc) {
+          setUser(doc.data().data);
+        } else {
+          addUser(currentUser.uid, {
+            displayName: currentUser.displayName,
+            uid: currentUser.uid,
+            userName: "",
+            bio: "",
+            photoURL: currentUser.photoURL,
+            // links: user ? user.links : links,
+            link: "",
+            followers: [],
+            following: [],
+          });
+        }
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  };
 
   return (
     <>

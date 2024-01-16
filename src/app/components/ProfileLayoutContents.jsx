@@ -10,6 +10,7 @@ import { auth } from "../firebase/Firebase-auth";
 import Skeleton from "@mui/material/Skeleton";
 import { UserContext } from "../contexts/user";
 import usePosts from "../hooks/usePosts";
+import Link from "next/link";
 
 export default function ProfileLayoutContents() {
   const user = useContext(UserContext);
@@ -77,9 +78,12 @@ export default function ProfileLayoutContents() {
               </Skeleton>
             )}
             <Stack direction={"row"} spacing={1} alignItems={"center"}>
-              <button className="capitalize text-white bg-stone-800 transition-colors hover:bg-stone-900 p-3 py-2 rounded-xl">
+              <Link
+                href={"/userdata"}
+                className="capitalize text-white bg-stone-800 transition-colors hover:bg-stone-900 p-3 py-2 rounded-xl"
+              >
                 edit profile
-              </button>
+              </Link>
               <button className="capitalize text-white bg-stone-800 transition-colors hover:bg-stone-900 p-3 py-2 rounded-xl">
                 view archive
               </button>
@@ -87,13 +91,33 @@ export default function ProfileLayoutContents() {
             </Stack>
           </Stack>
           <Stack direction={"row"} spacing={4} alignItems={"center"}>
-            <h1 className="text-white ">{userPostsLength} posts</h1>
-            <h1 className="text-white ">76 followers</h1>
-            <h1 className="text-white ">167 following</h1>
+            {user ? (
+              <h1 className="text-white ">{userPostsLength} posts</h1>
+            ) : (
+              <Skeleton variant="rounded" className="skeleton">
+                <h1 className="text-white font-insta ">200 posts</h1>
+              </Skeleton>
+            )}
+            {user ? (
+              <h1 className="text-white ">{user.followers.length} followers</h1>
+            ) : (
+              <Skeleton variant="rounded" className="skeleton">
+                <h1 className="text-white font-insta ">200 followers</h1>
+              </Skeleton>
+            )}
+            {user ? (
+              <h1 className="text-white ">{user.following.length} following</h1>
+            ) : (
+              <Skeleton variant="rounded" className="skeleton">
+                <h1 className="text-white font-insta ">200 following</h1>
+              </Skeleton>
+            )}
           </Stack>
           <Stack spacing={1} justifyContent={"center"}>
             {user ? (
-              <h1 className="text-white font-insta ">{user.email}</h1>
+              <h1 className="text-white font-insta text-lg">
+                @{user.userName}
+              </h1>
             ) : (
               <Skeleton variant="rounded" className="skeleton">
                 <h1 className="text-white font-insta ">
@@ -102,8 +126,27 @@ export default function ProfileLayoutContents() {
               </Skeleton>
             )}
             <Stack direction={"row"} spacing={4} alignItems={"center"}>
-              <h1 className="text-white font-insta "> description</h1>
+              {user ? (
+                <h1 className="text-white font-insta "> {user.bio}</h1>
+              ) : (
+                <Skeleton variant="rounded" className="skeleton">
+                  <h1 className="text-white font-insta "> description</h1>
+                </Skeleton>
+              )}
             </Stack>
+            {user ? (
+              <Link
+                href={user.link}
+                target="_blank"
+                className="text-blue-400 transition-colors hover:text-blue-500"
+              >
+                {user.link}
+              </Link>
+            ) : (
+              <Skeleton variant="rounded" className="skeleton">
+                <h1 className="text-white font-insta "> description</h1>
+              </Skeleton>
+            )}
           </Stack>
         </Stack>
       </Grid2>
