@@ -7,7 +7,7 @@ import SideBar from "./SideBar";
 import { UserContext } from "../contexts/user";
 import { auth } from "../firebase/Firebase-auth";
 import { onAuthStateChanged } from "firebase/auth";
-import { LinearProgress } from "@mui/material";
+import { LinearProgress, StyledEngineProvider } from "@mui/material";
 import {
   collection,
   doc,
@@ -74,7 +74,7 @@ export default function RootLayoutProvider({ children }) {
   };
 
   return (
-    <>
+    <StyledEngineProvider injectFirst>
       {pathName !== "/login" && pathName !== "/signup" ? (
         <UserContext.Provider value={user}>
           {loading && <LoadingCircle />}
@@ -88,7 +88,7 @@ export default function RootLayoutProvider({ children }) {
       ) : (
         <>{children}</>
       )}
-    </>
+    </StyledEngineProvider>
   );
 }
 

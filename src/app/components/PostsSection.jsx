@@ -209,7 +209,13 @@ const Post = ({ post, handleOpen, handleTargetPost, user }) => {
   }, [alertMessage]);
 
   return (
-    <Stack spacing={2} className="font-insta w-112">
+    <Stack
+      spacing={2}
+      sx={{
+        fontFamily: "insta",
+        width: "30rem",
+      }}
+    >
       {alertMessage !== null && showSnackbar(true)}
       <Stack direction={"row"} className="     items-center" spacing={1}>
         <Avatar src={post.author.avatar} />
