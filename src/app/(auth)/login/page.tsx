@@ -1,65 +1,93 @@
 "use client";
 import Link from "next/link";
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import {
   signInWithEmailAndPassword,
   signInWithPopup,
   GoogleAuthProvider,
+  Auth,
+  AuthProvider,
 } from "firebase/auth";
-import { auth } from "@/app/firebase/Firebase-auth";
+// import { auth } from "@/app/firebase/Firebase-auth";
+import { auth } from "../../firebase/Firebase-auth";
+
 import CircularProgress from "@mui/material/CircularProgress";
 import { useRouter } from "next/navigation";
+// import { StoreContext } from "@/app/contexts/StoreContext";
+import { StoreContext } from "../../contexts/StoreContext";
 
-export default function LoginPage() {
+import { observer } from "mobx-react-lite";
+
+ const LoginPage=()=> {
   const [userInfo, setUserInfo] = useState({
     email: "",
     password: "",
   });
   const router = useRouter();
 
-  const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState("");
+  const { currentUser } = useContext(StoreContext);
+
+  const [loading, setLoading] = useState<boolean>(false);
+  const [err, setErr] = useState<string>("");
 
   const provider = new GoogleAuthProvider();
 
-  const login = async (email, pass) => {
-    try {
-      setLoading(true);
-      const user = await signInWithEmailAndPassword(auth, email, pass);
+  const login = async (email: string, pass: string) => {
+  
+    setLoading(true)
+    await signInWithEmailAndPassword(auth, email, pass).then((user) => {
+      const data = {
+          data: {
+            bio: "",
+            followers: [],
+            following: [],
+            link: "",
+            username: "",
+          },
+      };
+      
+      currentUser.addUserToUserCollection(user.user.uid, data).then(() => {
+        setLoading(false)
+        router.push("/")
+        
+      }).catch((err) => {
+        console.log(err.message)
+      });
+    }).catch((err) => {
+      console.log(err.message)
+      setErr(err.message.slice(9))
+      setLoading(false)
+    })
 
-      if (user) {
-        router.push("/");
-      }
-    } catch (err) {
-      console.log(err);
-      setErr(err.message.slice(9));
-      setLoading(false);
-    }
+
   };
 
-  const googleLogin = (auth, provider) => {
-    signInWithPopup(auth, provider)
-      .then((result) => {
-        // This gives you a Google Access Token. You can use it to access the Google API.
-        const credential = GoogleAuthProvider.credentialFromResult(result);
-        const token = credential.accessToken;
-        // The signed-in user info.
-        const user = result.user;
-        // IdP data available using getAdditionalUserInfo(result)
-        // ...
-        if (user) {
-          router.push("/");
-        }
+  const googleLogin =async (auth: Auth, provider: AuthProvider) => {
+ await   signInWithPopup(auth, provider)
+      .then((user) => {
+      
+          const data = {
+            data: {
+              bio: "",
+              followers: [],
+              following: [],
+              link: "",
+              username: "",
+            },
+          };
+
+        currentUser.addUserToUserCollection(user.user.uid, data).then(() => {
+        router.push("/")
+       
+        
+      }).catch((err) => {
+        console.log(err.message)
+      });
       })
-      .catch((error) => {
-        // Handle Errors here.
-        const errorCode = error.code;
-        const errorMessage = error.message;
-        // The email of the user's account used.
-        const email = error.customData.email;
-        // The AuthCredential type that was used.
-        const credential = GoogleAuthProvider.credentialFromError(error);
-        // ...
+      .catch((err) => {
+
+        console.log(err.message);
+      
       });
   };
 
@@ -147,3 +175,6 @@ export default function LoginPage() {
     </div>
   );
 }
+
+
+export default observer (LoginPage)

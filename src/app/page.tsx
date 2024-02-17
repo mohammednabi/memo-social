@@ -3,6 +3,7 @@ import StoriesSection from "./components/StoriesSection";
 import PostsSection from "./components/PostsSection";
 import Grid2 from "@mui/material/Unstable_Grid2/Grid2";
 import SuggestedFriendsSection from "./components/SuggestedFriendsSection";
+import React from "react";
 
 export default function Home() {
   return (

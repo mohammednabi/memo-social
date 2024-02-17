@@ -17,15 +17,19 @@ import {
   Settings,
 } from "@mui/icons-material";
 import Link from "next/link";
-import { UserContext } from "../contexts/user";
+// import { UserContext } from "../contexts/user";
 
 import MoreMenu from "./MoreMenu";
 import MoreSideBarButton from "./MoreSideBarButton";
 
 import CreateButtonInSideBar from "./CreateButtonInSideBar";
+import { StoreContext } from "../contexts/StoreContext";
+import { observer } from "mobx-react-lite";
 
-export default function SideBar() {
-  const user = useContext(UserContext);
+const SideBar =()=> {
+  // const user = useContext(UserContext);
+
+  const {currentUser} = useContext(StoreContext)
 
   const items = [
     { title: "home", icon: <HomeOutlinedIcon sx={{ fontSize: "2rem" }} /> },
@@ -55,8 +59,8 @@ export default function SideBar() {
 
     {
       title: "profile",
-      icon: user ? (
-        <Avatar src={user.photoURL} />
+      icon: currentUser.signedUser.uid !=="" ? (
+        <Avatar src={currentUser.signedUser?.photoURL} />
       ) : (
         <Skeleton variant="circular" className="skeleton">
           <Avatar src="" />
@@ -108,3 +112,6 @@ export default function SideBar() {
     </nav>
   );
 }
+
+
+export default observer(SideBar)
