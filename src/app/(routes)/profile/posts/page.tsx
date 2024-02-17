@@ -1,33 +1,54 @@
 "use client";
 
-import PostModal from "@/app/components/PostModal";
-import { UserContext } from "@/app/contexts/user";
-import { db, getPosts } from "@/app/firebase/FireBase-config";
-import usePosts from "@/app/hooks/usePosts";
-import useTargetPost from "@/app/hooks/useTargetPost";
-import useUserPosts from "@/app/hooks/useUserPosts";
+// import PostModal from "@/app/components/PostModal";
+// import { StoreContext } from "@/app/contexts/StoreContext";
+// import { UserContext } from "@/app/contexts/user";
+// import { db, getPosts } from "@/app/firebase/FireBase-config";
+// import usePosts from "@/app/hooks/usePosts";
+// import useTargetPost from "@/app/hooks/useTargetPost";
+// import useUserPosts from "@/app/hooks/useUserPosts";
+
+
+import PostModal from "../../../components/PostModal";
+import { StoreContext } from "../../../contexts/StoreContext";
+// import { UserContext } from "../../../contexts/user";
+import { db, getPosts } from "../../../firebase/FireBase-config";
+
+
 import { Movie, MovieOutlined } from "@mui/icons-material";
 
 import Grid2 from "@mui/material/Unstable_Grid2/Grid2";
 import React, { useContext, useEffect, useState } from "react";
 
-export default function ProfilePostsPage() {
-  const user = useContext(UserContext);
+import { observer } from "mobx-react-lite";
+import { post } from "../../../../stores/generalCustomTypes";
+
+const ProfilePostsPage = () => {
+  // const user = useContext(UserContext);
+ 
 
   const [open, setOpen] = useState(false);
   const [mediaType, setMediaType] = useState("");
-  const [targetPost, setTargetPost] = useState();
+  const [targetPost, setTargetPost] = useState<post>();
 
-  const userPosts = useUserPosts();
+  const { posts,currentUser } = useContext(StoreContext);
 
   const handleClose = () => {
     setOpen(false);
   };
 
+  useEffect(() => {
+    posts.getUserPosts(currentUser.signedUser?.uid);
+  }, [currentUser.signedUser.uid, posts.userPosts]);
+
+
+
+  
+
   return (
     <div className="grid grid-cols-3 gap-2">
-      {userPosts.length > 0
-        ? userPosts.map((post) =>
+      {posts.userPosts.length > 0
+        ? posts.userPosts.map((post) =>
             post.mediaType.slice(0, 5) === "image" ? (
               <img
                 key={post.id}
@@ -65,7 +86,7 @@ export default function ProfilePostsPage() {
         : ""}
       {open && (
         <PostModal
-          user={user}
+          user={currentUser.signedUser}
           open={open}
           close={handleClose}
           mediaType={mediaType}
@@ -74,4 +95,6 @@ export default function ProfilePostsPage() {
       )}
     </div>
   );
-}
+};
+
+export default observer(ProfilePostsPage);

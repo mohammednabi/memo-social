@@ -1,104 +1,29 @@
-"use client";
-import {
-  Favorite,
-  FavoriteBorderOutlined,
-  PlayArrow,
-  VoiceChat,
-  VolumeOff,
-  VolumeUp,
-} from "@mui/icons-material";
-import ChatBubbleOutlineOutlinedIcon from "@mui/icons-material/ChatBubbleOutlineOutlined";
-import SendOutlinedIcon from "@mui/icons-material/SendOutlined";
-import BookmarkBorderOutlinedIcon from "@mui/icons-material/BookmarkBorderOutlined";
-import SentimentSatisfiedOutlinedIcon from "@mui/icons-material/SentimentSatisfiedOutlined";
-import {
-  Alert,
-  Avatar,
-  Backdrop,
-  Box,
-  Button,
-  CircularProgress,
-  Divider,
-  IconButton,
-  Skeleton,
-  Snackbar,
-  Stack,
-} from "@mui/material";
-import React, { useContext, useEffect, useRef, useState } from "react";
+"use client "
+// import { addingComment, toggleLove } from "@/app/functions/updateDocument";
+import { addingComment,toggleLove } from "../../functions/updateDocument";
+
+import React, { useEffect, useRef, useState } from "react";
+import TimeOfPost from "./TimeOfPost";
+// import { post } from "@/stores/generalCustomTypes";
+import { post } from "../../../stores/generalCustomTypes";
+
+import { Alert, Avatar, Backdrop, Box, CircularProgress, IconButton, Snackbar, Stack } from "@mui/material";
+import { BookmarkBorderOutlined, ChatBubbleOutlineOutlined, Favorite, FavoriteBorderOutlined, PlayArrow, SentimentSatisfiedOutlined, VolumeOff, VolumeUp } from "@mui/icons-material";
+import Grid2 from "@mui/material/Unstable_Grid2/Grid2";
 import data from "@emoji-mart/data";
 import Picker from "@emoji-mart/react";
-import Grid2 from "@mui/material/Unstable_Grid2/Grid2";
-import { collection, getDocs } from "firebase/firestore";
-import { postsCol } from "../firebase/FireBase-config";
-import usePosts from "../hooks/usePosts";
-import LoadMoreLoader from "./LoadMoreLoader";
-import { UserContext } from "../contexts/user";
-import PostModal from "./PostModal";
-import { addingComment, toggleLove } from "../functions/updateDocument";
 
-export default function PostsSection() {
-  const posts = usePosts();
 
-  const [index, setIndex] = useState(4);
-  const [targetPost, setTargetPost] = useState({ likes: 0 });
-  const [open, setOpen] = useState(false);
-  const user = useContext(UserContext);
-
-  const handleClose = () => {
-    setOpen(false);
-  };
-
-  const handleOpen = () => {
-    setOpen(true);
-  };
-
-  const handleTargetPost = (post) => {
-    setTargetPost(post);
-  };
-
-  const increaseIndex = () => {
-    setIndex((i) => {
-      return i + 4;
-    });
-  };
-
-  return (
-    <section className="flex flex-col gap-5 mt-5">
-      {posts.length > 0 ? (
-        posts.map(
-          (post, postIndex) =>
-            postIndex < index && (
-              <div key={post.id}>
-                <Post
-                  post={post}
-                  handleOpen={handleOpen}
-                  handleTargetPost={handleTargetPost}
-                  user={user}
-                  toggleLove={toggleLove}
-                />
-
-                <hr className="opacity-100 dark:opacity-10" />
-              </div>
-            )
-        )
-      ) : (
-        <PostSkeleton />
-      )}
-      {index < posts.length && <LoadMoreLoader increaseIndex={increaseIndex} />}
-      {open && (
-        <PostModal
-          user={user}
-          open={open}
-          close={handleClose}
-          mediaType={targetPost.mediaType}
-          targetPostId={targetPost.id}
-        />
-      )}
-    </section>
-  );
+interface iprops {
+    post: post
+    handleOpen: () => void
+    handleTargetPost: (post: React.SetStateAction<post>) => void
+    user: any
+    toggleLove:(postId: string, likes: string[], user: {    uid: string;}) => void
 }
 
-const Post = ({ post, handleOpen, handleTargetPost, user }) => {
+
+const Post = ({ post, handleOpen, handleTargetPost, user ,toggleLove}:iprops) => {
   const [inputComment, setInputComment] = useState("");
   const [emojiClicked, setEmojiClicked] = useState(false);
   const [videoPaused, setVideoPaused] = useState(true);
@@ -106,47 +31,12 @@ const Post = ({ post, handleOpen, handleTargetPost, user }) => {
   const [commentLoading, setCommentLoading] = useState(false);
   const [alertMessage, setAlertMessage] = useState(null);
 
-  const timeNow = new Date();
-  const videoRef = useRef();
+ 
+  const videoRef = useRef<HTMLVideoElement|null>(null);
 
-  const calculateTime = () => {
-    const timeDifference = Math.floor(
-      (timeNow.getTime() - post.timestamp.created.time) / 1000
-    ); // Calculate the time difference in seconds
 
-    const daysDifference = Math.floor(timeDifference / (24 * 60 * 60));
-    const hoursDifference = Math.floor((timeDifference / (60 * 60)) % 24);
-    const minutesDifference = Math.floor((timeDifference / 60) % 60);
-    const secondsDifference = Math.floor(timeDifference % 60);
 
-    if (daysDifference > 0) {
-      return (
-        <h3 className="text-stone-950/50 dark:text-white/25">
-          {daysDifference} d
-        </h3>
-      );
-    } else if (hoursDifference > 0) {
-      return (
-        <h3 className="text-stone-950/50 dark:text-white/25">
-          {hoursDifference} h
-        </h3>
-      );
-    } else if (minutesDifference > 0) {
-      return (
-        <h3 className="text-stone-950/50 dark:text-white/25">
-          {minutesDifference} m
-        </h3>
-      );
-    } else if (secondsDifference > 0) {
-      return (
-        <h3 className="text-stone-950/50 dark:text-white/25">
-          {secondsDifference} s
-        </h3>
-      );
-    }
-  };
-
-  const addComment = (postId, comments, comment, user) => {
+  const addComment = (postId: string, comments: { author: { avatar: string; email: string; id: string; name: string; }; content: string; id: string; }[], comment: string, user: { uid: any; displayName: any; photoURL: any; }) => {
     addingComment(postId, comments, comment, user)
       .then(() => {
         setCommentLoading(false);
@@ -224,7 +114,10 @@ const Post = ({ post, handleOpen, handleTargetPost, user }) => {
         </h1>
         <Stack direction={"row"} spacing={0.5}>
           <h2 className="text-stone-950/50 dark:text-white/25 ">● </h2>
-          {calculateTime()}
+                  {/* {calculateTime()} */}
+                  
+                  <TimeOfPost createdTime={post.timestamp.created.time} createdDate={post.timestamp.created.date } />
+
         </Stack>
       </Stack>
       <div className="w-112 aspect-square">
@@ -259,7 +152,7 @@ const Post = ({ post, handleOpen, handleTargetPost, user }) => {
                 toggleVideoPause();
               }}
             >
-              <PlayArrow className="text-7xl  text-white" />
+              <PlayArrow className="text-7xl text-white" />
             </IconButton>
 
             <IconButton
@@ -283,7 +176,7 @@ const Post = ({ post, handleOpen, handleTargetPost, user }) => {
           spacing={1}
           className="justify-center items-center"
         >
-          {!post.likes.includes(`${user.uid}`) ? (
+          {!post?.likes.includes(`${user?.uid}`) ? (
             <IconButton
               onClick={() => {
                 toggleLove(post.id, post.likes, user);
@@ -312,8 +205,8 @@ const Post = ({ post, handleOpen, handleTargetPost, user }) => {
               handleTargetPost(post);
             }}
           >
-            <ChatBubbleOutlineOutlinedIcon
-              className="cursor-pointer transition-colors text-white hover:text-white/50"
+            <ChatBubbleOutlineOutlined
+              className="cursor-pointer transition-colors text-stone-950  dark:text-white  hover:text-stone-950/50 dark:hover:text-white/50"
               sx={{ fontSize: "1.6rem" }}
             />
           </IconButton>
@@ -326,8 +219,8 @@ const Post = ({ post, handleOpen, handleTargetPost, user }) => {
         </Stack>
 
         <IconButton>
-          <BookmarkBorderOutlinedIcon
-            className="cursor-pointer text-white transition-colors hover:text-white/50"
+          <BookmarkBorderOutlined
+            className="cursor-pointer text-stone-950  dark:text-white transition-colors hover:text-stone-950/50 dark:hover:text-white/50"
             sx={{ fontSize: "2rem" }}
           />
         </IconButton>
@@ -346,11 +239,11 @@ const Post = ({ post, handleOpen, handleTargetPost, user }) => {
                 src={post.comments[post.comments.length - 1].author.avatar}
                 className="w-8 h-8"
               />
-              <h1 className="text-white text-lg">
+              <h1 className="text-stone-950 dark:text-white text-lg">
                 {post.comments[post.comments.length - 1].author.name}
               </h1>
             </Stack>
-            <p className="text-white/60 pl-10">
+            <p className="text-stone-950/60 dark:text-white/60 pl-10">
               {post.comments[post.comments.length - 1].content}
             </p>
           </Stack>
@@ -401,13 +294,13 @@ const Post = ({ post, handleOpen, handleTargetPost, user }) => {
                 setEmojiClicked(!emojiClicked);
               }}
             >
-              <SentimentSatisfiedOutlinedIcon className="text-stone-950 dark:text-white text-lg cursor-pointer" />
+              <SentimentSatisfiedOutlined className="text-stone-950 dark:text-white text-lg cursor-pointer" />
             </IconButton>
             {emojiClicked && (
               <Box sx={{ position: "absolute", right: "50%" }}>
                 <Picker
                   data={data}
-                  onEmojiSelect={(e) => {
+                  onEmojiSelect={(e: { native: string; }) => {
                     setInputComment(inputComment + e.native);
                     setEmojiClicked(false);
                   }}
@@ -421,66 +314,6 @@ const Post = ({ post, handleOpen, handleTargetPost, user }) => {
   );
 };
 
-const PostSkeleton = () => {
-  return (
-    <Stack spacing={2} className="font-insta mb-10">
-      <Stack direction={"row"} className="     items-center" spacing={1}>
-        <Skeleton variant="circular" className="skeleton">
-          <Avatar src="" />
-        </Skeleton>
-        <Skeleton variant="rounded" className="skeleton">
-          <h1 className="text-white font-semibold">mohammed nabil</h1>
-        </Skeleton>
-        <Skeleton variant="rounded" className="skeleton">
-          <Stack direction={"row"}>
-            <h2 className="text-white/25">.</h2>
-            <h3 className="text-white/25"> 5 m</h3>
-          </Stack>
-        </Skeleton>
-      </Stack>
-      <Skeleton variant="rectangular" className="skeleton">
-        <div className="w-112 aspect-square">
-          <img
-            className="w-full h-full object-cover rounded-md"
-            alt=""
-            src=""
-            loading="lazy"
-          />
-        </div>
-      </Skeleton>
 
-      <Skeleton variant="rounded" className="skeleton">
-        <Stack
-          direction={"row"}
-          className="text-white justify-between items-center"
-        >
-          <Stack
-            direction={"row"}
-            spacing={2}
-            className="justify-center items-center"
-          >
-            <FavoriteBorderOutlined sx={{ fontSize: "2rem", color: "red" }} />
-            <ChatBubbleOutlineOutlinedIcon sx={{ fontSize: "2rem" }} />
-            <SendOutlinedIcon
-              sx={{ fontSize: "2rem" }}
-              className="-rotate-12"
-            />
-          </Stack>
 
-          <BookmarkBorderOutlinedIcon sx={{ fontSize: "2rem" }} />
-        </Stack>
-      </Skeleton>
-      {/* <Stack spacing={1}>
-        <Skeleton variant="rounded" className="skeleton">
-          <h2 className="text-white/95">6,589 likes</h2>
-        </Skeleton>
-        <Skeleton variant="rounded" className="skeleton">
-          <h1 className="text-white/95">this is a description for the post </h1>
-        </Skeleton>
-        <Skeleton variant="rounded" className="skeleton">
-          <h2 className="text-white/60">View all comments</h2>
-        </Skeleton>
-      </Stack> */}
-    </Stack>
-  );
-};
+export default Post

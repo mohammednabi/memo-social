@@ -2,9 +2,9 @@
 import Grid2 from "@mui/material/Unstable_Grid2/Grid2";
 import { usePathname, useRouter } from "next/navigation";
 
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import SideBar from "./SideBar";
-import { UserContext } from "../contexts/user";
+
 import { auth } from "../firebase/Firebase-auth";
 import { onAuthStateChanged } from "firebase/auth";
 import { LinearProgress, StyledEngineProvider } from "@mui/material";
@@ -18,11 +18,16 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebase/FireBase-config";
 import { addUser } from "../functions/updateDocument";
+import { observer } from "mobx-react-lite";
+import { StoreContext } from "../contexts/StoreContext";
+import { defaultUser } from "../../stores/generalCustomTypes";
 
-export default function RootLayoutProvider({ children }) {
+const RootLayoutProvider =({ children })=> {
   const pathName = usePathname();
   const router = useRouter();
-  const [user, setUser] = useState();
+  // const [user, setUser] = useState();
+
+  const {currentUser} = useContext(StoreContext)
 
   const [loading, setLoading] = useState(false);
 
@@ -32,14 +37,34 @@ export default function RootLayoutProvider({ children }) {
       : (document.body.style.overflow = "unset");
   }, [loading]);
 
-  onAuthStateChanged(auth, (currentUser) => {
+  onAuthStateChanged(auth, (logedUser) => {
     // console.log("this is the cure nt user : ", currentUser);
-    if (currentUser && !user) {
-      getCurrentUser(currentUser);
-    }
+    // if (currentUser && !user) {
+    //   getCurrentUser(currentUser);
+    // }
+
+    if (logedUser) {
+
+const confirmedUser:defaultUser = {
+  uid: logedUser.uid,
+  displayName: logedUser.displayName,
+  email: logedUser.email,
+  photoURL: logedUser.photoURL,
+  data: {
+    bio: "",
+    followers: [],
+    following: [],
+    link: "",
+    username: ""
+  }
+}
+
+ currentUser.saveCurrentUser(confirmedUser) 
+}
+
     // setUser(currentUser);
 
-    if (!currentUser) {
+    if (!logedUser) {
       pathName !== "/signup" ? router.push("/login") : router.push("/signup");
       setLoading(true);
     } else {
@@ -47,36 +72,36 @@ export default function RootLayoutProvider({ children }) {
     }
   });
 
-  const getCurrentUser = (currentUser) => {
-    const userRef = doc(db, "users", `${currentUser.uid}`);
-    getDoc(userRef)
-      .then((doc) => {
-        // console.log("this is the document of users : ", doc.data().data);
-        if (doc) {
-          setUser(doc.data().data);
-        } else {
-          addUser(currentUser.uid, {
-            displayName: currentUser.displayName,
-            uid: currentUser.uid,
-            userName: "",
-            bio: "",
-            photoURL: currentUser.photoURL,
-            // links: user ? user.links : links,
-            link: "",
-            followers: [],
-            following: [],
-          });
-        }
-      })
-      .catch((err) => {
-        console.log(err);
-      });
-  };
+  // const getCurrentUser = (currentUser) => {
+  //   const userRef = doc(db, "users", `${currentUser.uid}`);
+  //   getDoc(userRef)
+  //     .then((doc) => {
+  //       // console.log("this is the document of users : ", doc.data().data);
+  //       if (doc) {
+  //         setUser(doc.data().data);
+  //       } else {
+  //         addUser(currentUser.uid, {
+  //           displayName: currentUser.displayName,
+  //           uid: currentUser.uid,
+  //           userName: "",
+  //           bio: "",
+  //           photoURL: currentUser.photoURL,
+  //           // links: user ? user.links : links,
+  //           link: "",
+  //           followers: [],
+  //           following: [],
+  //         });
+  //       }
+  //     })
+  //     .catch((err) => {
+  //       console.log(err);
+  //     });
+  // };
 
   return (
     <StyledEngineProvider injectFirst>
       {pathName !== "/login" && pathName !== "/signup" ? (
-        <UserContext.Provider value={user}>
+        <>
           {loading && <LoadingCircle />}
           <Grid2 container>
             <Grid2 xs={2}>
@@ -84,7 +109,8 @@ export default function RootLayoutProvider({ children }) {
             </Grid2>
             <Grid2 xs={10}>{children}</Grid2>
           </Grid2>
-        </UserContext.Provider>
+        </>
+       
       ) : (
         <>{children}</>
       )}
@@ -116,3 +142,6 @@ const LoadingCircle = () => {
     </div>
   );
 };
+
+
+export default observer(RootLayoutProvider)

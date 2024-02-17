@@ -4,7 +4,11 @@ import { db } from "../firebase/FireBase-config";
 import { v4 as uuidv4 } from "uuid";
 import { getAuth, updateProfile } from "firebase/auth";
 
-export const toggleLove = (postId, likes, user) => {
+export const toggleLove = (
+  postId: string,
+  likes: string[],
+  user: { uid: string }
+) => {
   if (!likes.includes(`${user.uid}`)) {
     addLove(postId, likes, user);
   } else {
@@ -12,7 +16,7 @@ export const toggleLove = (postId, likes, user) => {
   }
 };
 
-const addLove = (postId, likes, user) => {
+const addLove = (postId: string, likes: any, user: { uid: any }) => {
   const commentRef = doc(db, "posts", postId);
 
   // console.log("likes should be added : ");
@@ -27,9 +31,9 @@ const addLove = (postId, likes, user) => {
     });
 };
 
-const removeLove = (postId, likes, user) => {
+const removeLove = (postId: string, likes: string[], user: { uid: string }) => {
   const commentRef = doc(db, "posts", postId);
-  let modifiedLikes = likes.filter((like) => {
+  let modifiedLikes = likes.filter((like: string) => {
     if (like !== `${user.uid}`) {
       return like;
     }
@@ -46,7 +50,12 @@ const removeLove = (postId, likes, user) => {
     });
 };
 
-export const addingComment = (postId, comments, comment, user) => {
+export const addingComment = (
+  postId: string,
+  comments: any,
+  comment: any,
+  user: { uid: any; displayName: any; photoURL: any }
+) => {
   const commentRef = doc(db, "posts", postId);
 
   const commentData = {
@@ -64,7 +73,7 @@ export const addingComment = (postId, comments, comment, user) => {
   });
 };
 
-export const deletePost = (postId, postMedia) => {
+export const deletePost = (postId: string, postMedia: any) => {
   const commentRef = doc(db, "posts", postId);
 
   deleteDoc(commentRef);
@@ -72,14 +81,14 @@ export const deletePost = (postId, postMedia) => {
   return deletePostMedia(postMedia);
 };
 
-const deletePostMedia = (postMedia) => {
+const deletePostMedia = (postMedia: any) => {
   const storage = getStorage();
   const mediaRef = ref(storage, `${postMedia}`);
 
   return deleteObject(mediaRef);
 };
 
-export const updatePost = (postDescription, postId) => {
+export const updatePost = (postDescription: any, postId: any) => {
   const postRef = doc(db, "posts", `${postId}`);
 
   return updateDoc(postRef, {
@@ -87,7 +96,7 @@ export const updatePost = (postDescription, postId) => {
   });
 };
 
-export const editUserProfile = (username, photoURL) => {
+export const editUserProfile = (username: any, photoURL: any) => {
   const auth = getAuth();
   return updateProfile(auth.currentUser, {
     displayName: username,
@@ -95,13 +104,27 @@ export const editUserProfile = (username, photoURL) => {
   });
 };
 
-export const addUser = (userId, data) => {
+export const addUser = (
+  userId: any,
+  data: {
+    displayName: any;
+    uid: any;
+    userName: any;
+    bio: any;
+    photoURL: any;
+    link: any;
+    followers: any;
+    following: any;
+  }
+) => {
   const userRef = doc(db, "users", `${userId}`);
   const userData = { data };
   return setDoc(userRef, userData);
 };
 
-export const uploadAvatarImage = (imageObj) => {
+export const uploadAvatarImage = (
+  imageObj: Blob | Uint8Array | ArrayBuffer
+) => {
   if (imageObj === null) return;
   const storage = getStorage();
   const imageRef = ref(storage, `/avatars/${imageObj.name + uuidv4()}`);
@@ -122,7 +145,7 @@ export const uploadAvatarImage = (imageObj) => {
   // });
 };
 
-export const updateUserImage = (userId, imgUrl, data) => {
+export const updateUserImage = (userId: any, imgUrl: string, data: any) => {
   const userRef = doc(db, "users", `${userId}`);
   const auth = getAuth();
   updateProfile(auth.currentUser, {

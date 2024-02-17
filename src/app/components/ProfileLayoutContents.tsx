@@ -8,28 +8,17 @@ import { Settings } from "@mui/icons-material";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../firebase/Firebase-auth";
 import Skeleton from "@mui/material/Skeleton";
-import { UserContext } from "../contexts/user";
-import usePosts from "../hooks/usePosts";
+// import { UserContext } from "../contexts/user";
+
 import Link from "next/link";
+import { StoreContext } from "../contexts/StoreContext";
+import { observer } from "mobx-react-lite";
 
-export default function ProfileLayoutContents() {
-  const user = useContext(UserContext);
-  const posts = usePosts();
-  const [userPostsLength, setUserPostsLength] = useState(0);
+const ProfileLayoutContents = () => {
+  // const user = useContext(UserContext);
 
-  const getUserPosts = () => {
-    if (user && posts) {
-      const allUserPosts = posts.filter((post) => {
-        return post.author.id === user.uid;
-      });
 
-      setUserPostsLength(allUserPosts.length);
-    }
-  };
-
-  useEffect(() => {
-    getUserPosts();
-  }, [user, posts]);
+  const { posts,currentUser } = useContext(StoreContext);
 
   return (
     <Grid2
@@ -46,8 +35,8 @@ export default function ProfileLayoutContents() {
         justifyContent={"flex-end"}
         alignItems={"center"}
       >
-        {user ? (
-          <Avatar src={user.photoURL} className="w-36 h-36" />
+        {currentUser.signedUser.uid !=="" ? (
+          <Avatar src={currentUser.signedUser.photoURL} className="w-36 h-36" />
         ) : (
           <Skeleton variant="circular" className="skeleton">
             <Avatar src="" className="w-36 h-36" />
@@ -68,9 +57,9 @@ export default function ProfileLayoutContents() {
             alignItems={"center"}
             className="font-insta"
           >
-            {user ? (
+            {currentUser.signedUser.uid !=="" ? (
               <h1 className="text-white text-xl font-insta ">
-                {user.displayName ? user.displayName : "unknown"}
+                {currentUser.signedUser.displayName ? currentUser.signedUser.displayName : "unknown"}
               </h1>
             ) : (
               <Skeleton variant="rounded" className="skeleton">
@@ -91,22 +80,22 @@ export default function ProfileLayoutContents() {
             </Stack>
           </Stack>
           <Stack direction={"row"} spacing={4} alignItems={"center"}>
-            {user ? (
-              <h1 className="text-white ">{userPostsLength} posts</h1>
+            {currentUser.signedUser.uid !=="" ? (
+              <h1 className="text-white ">{posts.userPostsLength} posts</h1>
             ) : (
               <Skeleton variant="rounded" className="skeleton">
                 <h1 className="text-white font-insta ">200 posts</h1>
               </Skeleton>
             )}
-            {user ? (
-              <h1 className="text-white ">{user.followers.length} followers</h1>
+            {currentUser.signedUser.uid !=="" ? (
+              <h1 className="text-white ">{currentUser.signedUser.data.followers.length} followers</h1>
             ) : (
               <Skeleton variant="rounded" className="skeleton">
                 <h1 className="text-white font-insta ">200 followers</h1>
               </Skeleton>
             )}
-            {user ? (
-              <h1 className="text-white ">{user.following.length} following</h1>
+            {currentUser.signedUser.uid !=="" ? (
+              <h1 className="text-white ">{currentUser.signedUser.data.following.length} following</h1>
             ) : (
               <Skeleton variant="rounded" className="skeleton">
                 <h1 className="text-white font-insta ">200 following</h1>
@@ -114,9 +103,9 @@ export default function ProfileLayoutContents() {
             )}
           </Stack>
           <Stack spacing={1} justifyContent={"center"}>
-            {user ? (
+            {currentUser.signedUser.uid !=="" ? (
               <h1 className="text-white font-insta text-lg">
-                @{user.userName}
+                @{currentUser.signedUser.data.username}
               </h1>
             ) : (
               <Skeleton variant="rounded" className="skeleton">
@@ -126,21 +115,21 @@ export default function ProfileLayoutContents() {
               </Skeleton>
             )}
             <Stack direction={"row"} spacing={4} alignItems={"center"}>
-              {user ? (
-                <h1 className="text-white font-insta "> {user.bio}</h1>
+              {currentUser.signedUser.uid !=="" ? (
+                <h1 className="text-white font-insta "> {currentUser.signedUser.data.bio}</h1>
               ) : (
                 <Skeleton variant="rounded" className="skeleton">
                   <h1 className="text-white font-insta "> description</h1>
                 </Skeleton>
               )}
             </Stack>
-            {user ? (
+            {currentUser.signedUser.uid !=="" ? (
               <Link
-                href={user.link}
+                href={currentUser.signedUser.data.link}
                 target="_blank"
                 className="text-blue-400 transition-colors hover:text-blue-500"
               >
-                {user.link}
+                {currentUser.signedUser.data.link}
               </Link>
             ) : (
               <Skeleton variant="rounded" className="skeleton">
@@ -152,4 +141,6 @@ export default function ProfileLayoutContents() {
       </Grid2>
     </Grid2>
   );
-}
+};
+
+export default observer(ProfileLayoutContents);
